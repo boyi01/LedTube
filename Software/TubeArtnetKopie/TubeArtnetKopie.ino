@@ -11,6 +11,8 @@ This example may be copied under the terms of the MIT license, see the LICENSE f
 Artnet artnet;
 #include <NeoPixelBus.h>
 
+
+
 // Neopixel settings
 const int numLeds = 80; // change for your setup
 const int channelsPerLed = 4;
@@ -19,17 +21,28 @@ const byte dataPin = 28;
 NeoPixelBus<NeoRgbwwFeature, NeoWs2812xMethod> strip(numLeds, dataPin);
 
 
+
+
+
+//TEST
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel strip2(1, 16, NEO_GRBW + NEO_KHZ800); 
+
+#define OTETHERNET
+#include <ArduinoOTA.h>
+
 // Check if we got all universes
 uint16_t universe1 = 0; // 0 - 32767
 bool sendFrame = 1; 
 int previousDataLength = 0;
-
+EthernetUDP Udp;  
 // Change ip and mac address for your setup
 byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x69, 0xEC};
 
 byte ip[] = {192, 168, 1, 177};
 IPAddress myDns(192, 168, 1, 1);
 byte broadcast[] = {192, 168, 1, 255};
+
 
 struct ArtPollReplyMetadata
 {
@@ -50,12 +63,17 @@ void setup()
  artnet.begin();
   strip.Begin();
   strip.Show();
+  strip2.begin();
+  strip2.show();
   // this will be called for each packet received
    artnet.subscribeArtDmxUniverse(0, [&](const uint8_t *data, uint16_t size, const ArtDmxMetadata &metadata, const ArtNetRemoteInfo &remote) {
        int offset =  1;
         float colorBalance = ((float) data[0])/255;
         // read universe and put into the right part of the display buffer
                 //  Serial.println(data[1]+data[2]+data[3]+data[4]);
+                
+    strip2.setPixelColor(0,strip2.Color(data[1],data[2],data[3],data[4]));
+    strip2.show();
         for (int i = 0; i < size  / channelsPerLed; i++)
         { 
           int led = i;
@@ -72,7 +90,7 @@ void setup()
 
 
     });
-
+ ArduinoOTA.begin(Ethernet.localIP(), "Arduino", "password", InternalStorage);
 
 
 }
@@ -82,10 +100,11 @@ void setup()
 void loop()
 {
 
-  
+      ArduinoOTA.poll();
   // we call the read function inside the loop
   artnet.parse();
 }
+
 
 
 
